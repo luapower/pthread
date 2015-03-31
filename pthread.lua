@@ -1,7 +1,7 @@
 --pthread binding (Cosmin Apreutesei, public domain)
-require'_attic.pthread_h'
+require'pthread_h'
 local ffi = require'ffi'
-local C = ffi.load'pthread'
+local C = ffi.load(ffi.os == 'Windows' and 'libwinpthread-1' or 'pthread')
 
 local M = {C = C}
 

@@ -1,14 +1,7 @@
 --pthread.h from open group (google on pthread.h)
---ptw32_handle_t from pthreads-w32
 require'ffi'.cdef[[
 
-typedef struct {
-    void * p;                   /* Pointer to actual object */
-    unsigned int x;             /* Extra information - reuse count etc */
-} ptw32_handle_t;
-
-typedef ptw32_handle_t pthread_t;
-
+typedef struct {void *p;} pthread_t;
 typedef struct {void *p;} pthread_attr_t;
 typedef struct {void *p;} pthread_once_t;
 typedef struct {void *p;} pthread_key_t;

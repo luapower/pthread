@@ -29,7 +29,7 @@ end
 local function worker(args)
 	local ffi = require'ffi'
 	local pthread = require'pthread'
-	local lua = require'lua'
+	local lua = require'luastate'
 	local state = ffi.cast('lua_State*', args.state)
 	local mutex = ffi.cast('pthread_mutex_t*', args.mutex)
 	local function pass(...)
