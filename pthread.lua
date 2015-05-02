@@ -1,4 +1,7 @@
---pthread binding (Cosmin Apreutesei, public domain)
+
+--POSXI threads binding.
+--Cosmin Apreutesei. Public Domain.
+
 require'pthread_h'
 local ffi = require'ffi'
 local C = ffi.load(ffi.os == 'Windows' and 'libwinpthread-1' or 'pthread')
