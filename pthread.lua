@@ -2,15 +2,21 @@
 --POSXI threads binding.
 --Cosmin Apreutesei. Public Domain.
 
-require'pthread_h'
-local ffi = require'ffi'
-local C = ffi.load(ffi.os == 'Windows' and 'libwinpthread-1' or 'pthread')
+if not ... then require 'pthread_demo' end
 
+local ffi = require'ffi'
+local lib = ffi.os == 'Windows' and 'libwinpthread-1' or 'pthread'
+local C = ffi.load(lib)
 local M = {C = C}
+local PM = require'pthread_h'
+--add wrappers from pthread_h
+for k,v in pairs(PM) do
+	M[k] = v
+end
 
 local function check(ok, ret)
 	if ok then return end
-	error(string.format('errno %d', ret))
+	error(string.format('pthread error: %d', ret))
 end
 
 local function checkz(ret)
@@ -20,19 +26,18 @@ end
 --threads
 
 function M.new(func_cb, attr, arg)
-	local pthread = ffi.new'pthread_t'
+	local pthread = ffi.new'pthread_t[1]'
 	checkz(C.pthread_create(pthread, attr, func_cb, arg))
-	return pthread
+	return pthread[0]
 end
+
+M.self = C.pthread_self
+M.equal = C.pthread_equal --luajit converts 0/1 into true/false for __eq
 
 --call from thread to exit with a status code (which is a pointer)
 --call from the main thread to wait on all threads.
 function M.exit(code)
 	checkz(C.pthread_exit(code))
-end
-
-function M.cancel(pthread)
-	checkz(C.pthread_cancel(pthread))
 end
 
 function M.join(pthread)
@@ -41,8 +46,35 @@ function M.join(pthread)
 	return status[0]
 end
 
-M.self = C.pthread_self
-M.equal = C.pthread_equal --luajit converts 0/1 into true/false for __eq
+function M.cancel(pthread)
+	checkz(C.pthread_cancel(pthread))
+end
+
+--attributes
+
+function M.attr()
+	local attr = ffi.new'pthread_attr_t'
+	checkz(C.pthread_attr_init(attr))
+	ffi.gc(attr, C.pthread_attr_destroy(attr))
+	return attr
+end
+
+ffi.metatype('struct pthread_attr_t', {__index = {
+	getdetachstate = C.pthread_attr_getdetachstate,
+	setdetachstate = C.pthread_attr_setdetachstate,
+	getinheritsched = C.pthread_attr_getinheritsched,
+	setinheritsched = C.pthread_attr_setinheritsched,
+	getschedparam = C.pthread_attr_getschedparam,
+	setschedparam = C.pthread_attr_setschedparam,
+	getschedpolicy = C.pthread_attr_getschedpolicy,
+	setschedpolicy = C.pthread_attr_setschedpolicy,
+	getscope = C.pthread_attr_getscope,
+	setscope = C.pthread_attr_setscope,
+	getstackaddr = C.pthread_attr_getstackaddr,
+	setstackaddr = C.pthread_attr_setstackaddr,
+	getstacksize = C.pthread_attr_getstacksize,
+	setstacksize = C.pthread_attr_setstacksize,
+}})
 
 --mutexes
 
@@ -104,14 +136,14 @@ end
 
 --object interface
 
-ffi.metatype('pthread_t', {__index = {
+ffi.metatype('struct pthread_t', {__index = {
 	exit = M.exit,
 	cancel = M.cancel,
 	join = M.join,
 	self = M.self,
 }, __eq = M.equal})
 
-ffi.metatype('pthread_mutex_t', {__index = {
+ffi.metatype('struct pthread_mutex_t', {__index = {
 	free = M.mutex.free,
 	lock = M.mutex.lock,
 	trylock = M.mutex.trylock,
@@ -123,7 +155,5 @@ ffi.metatype('pthread_cond_t', {__index = {
 	signal = M.cond.signal,
 	broadcast = M.cond.broadcast,
 }})
-
-if not ... then require 'pthread_demo' end
 
 return M

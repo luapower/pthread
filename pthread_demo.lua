@@ -98,4 +98,3 @@ local join1 = new_thread(thread:new{x = 5, e = 2})
 local join2 = new_thread(thread:new{x = 12, e = 2})
 join1()
 join2()
-
