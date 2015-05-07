@@ -3,6 +3,12 @@ local lua = require'luastate'
 local ffi = require'ffi'
 local glue = require'glue'
 
+--thread attrs
+
+local attr = pthread.attr()
+attr:detachstate'joinable'
+attr:inheritsched'explicit'
+
 --create a new Lua state and a new thread, and run a worker function in that state and thread.
 local function create_thread(worker, args)
 	local state = lua.open()

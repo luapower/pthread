@@ -1,7 +1,5 @@
---pthread cdefs for winpthreads, Linux/GLIBC and OSX.
---NOTE: POSIX is a standard hostile to binary compatibility, resulting in
---substantially different ABIs for each platform/arch. Don't even think of
---running on an unsupported platform with these cdefs.
+--pthread cdefs for winpthreads, libpthread/Linux and OSX.
+--NOTE: only functions found in all implementations are defined.
 local ffi = require'ffi'
 local M = require('pthread_h_'..ffi.os:lower())
 
@@ -31,8 +29,6 @@ int pthread_attr_getinheritsched(const pthread_attr_t *a, int *flag);
 int pthread_attr_setinheritsched(pthread_attr_t *a, int flag);
 int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
 int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param);
-int pthread_attr_getschedpolicy (pthread_attr_t *attr, int *pol);
-int pthread_attr_setschedpolicy (pthread_attr_t *attr, int pol);
 int pthread_attr_getscope(const pthread_attr_t *a, int *flag);
 int pthread_attr_setscope(pthread_attr_t *a, int flag);
 int pthread_attr_getstackaddr(pthread_attr_t *attr, void **stack);

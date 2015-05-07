@@ -1,8 +1,9 @@
 
---POSXI threads binding.
---Cosmin Apreutesei. Public Domain.
+--POSIX threads binding.
+--Written by Cosmin Apreutesei. Public Domain.
+--Only stuff found in *all* supported platforms is defined.
 
-if not ... then require 'pthread_demo' end
+if not ... then return require'pthread_demo' end
 
 local ffi = require'ffi'
 local lib = ffi.os == 'Windows' and 'libwinpthread-1' or 'pthread'
@@ -50,30 +51,74 @@ function M.cancel(pthread)
 	checkz(C.pthread_cancel(pthread))
 end
 
---attributes
+--thread attributes
 
 function M.attr()
 	local attr = ffi.new'pthread_attr_t'
 	checkz(C.pthread_attr_init(attr))
-	ffi.gc(attr, C.pthread_attr_destroy(attr))
+	ffi.gc(attr, C.pthread_attr_destroy)
 	return attr
 end
 
+local function invert(t)
+	local dt = {}
+	for k,v in pairs(t) do
+		dt[v] = k
+	end
+	return dt
+end
+
 ffi.metatype('struct pthread_attr_t', {__index = {
-	getdetachstate = C.pthread_attr_getdetachstate,
-	setdetachstate = C.pthread_attr_setdetachstate,
-	getinheritsched = C.pthread_attr_getinheritsched,
-	setinheritsched = C.pthread_attr_setinheritsched,
-	getschedparam = C.pthread_attr_getschedparam,
-	setschedparam = C.pthread_attr_setschedparam,
-	getschedpolicy = C.pthread_attr_getschedpolicy,
-	setschedpolicy = C.pthread_attr_setschedpolicy,
-	getscope = C.pthread_attr_getscope,
-	setscope = C.pthread_attr_setscope,
-	getstackaddr = C.pthread_attr_getstackaddr,
-	setstackaddr = C.pthread_attr_setstackaddr,
-	getstacksize = C.pthread_attr_getstacksize,
-	setstacksize = C.pthread_attr_setstacksize,
+	detachstate = function(attr, state)
+		local flags = {
+			joinable = C.PTHREAD_CREATE_JOINABLE,
+			detached = C.PTHREAD_CREATE_DETACHED,
+		}
+		local invflags = invert(flags)
+		if state == nil then
+			state = ffi.new'int[1]'
+			checkz(C.pthread_attr_getdetachstate(attr, state))
+			return invflags[state[0]]
+		else
+			checkz(C.pthread_attr_setdetachstate(attr, flags[state]))
+		end
+	end,
+	inheritsched = function(attr, inh)
+		local flags = {
+			inherit  = C.PTHREAD_INHERIT_SCHED,
+			explicit = C.PTHREAD_EXPLICIT_SCHED,
+		}
+		local invflags = invert(flags)
+		if inh == nil then
+			inh = ffi.new'int[1]'
+			checkz(C.pthread_attr_getinheritsched(attr, inh))
+			return invflags[inh[0]]
+		else
+			checkz(C.pthread_attr_setinheritsched(attr, flags[inh]))
+		end
+	end,
+	schedpriority = function(attr, prio)
+		local flags = {
+			other = C.SCHED_OTHER,
+			fifo  = C.SCHED_FIFO,
+			rr    = C.SCHED_RR,
+		}
+		local invflags = invert(flags)
+		local param = ffi.new'sched_param'
+		if prio == nil then
+			checkz(M.pthread_attr_getschedparam(attr, param))
+			return invflags[param.sched_priority]
+		else
+			param.sched_priority = flags[prio]
+			checkz(M.pthread_attr_setschedparam(attr, param))
+		end
+	end,
+	getscope = M.pthread_attr_getscope,
+	setscope = M.pthread_attr_setscope,
+	getstackaddr = M.pthread_attr_getstackaddr,
+	setstackaddr = M.pthread_attr_setstackaddr,
+	getstacksize = M.pthread_attr_getstacksize,
+	setstacksize = M.pthread_attr_setstacksize,
 }})
 
 --mutexes
