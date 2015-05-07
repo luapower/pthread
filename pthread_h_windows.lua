@@ -1,5 +1,6 @@
 --cdefs for winpthreads v0.5.0 from mingw-w64 4.9.2
 local ffi = require'ffi'
+assert(ffi.os == 'Windows', 'platform not Windows')
 
 ffi.cdef[[
 enum {

@@ -1,5 +1,6 @@
 --cdefs for pthread on OSX 10.10 SDK
 local ffi = require'ffi'
+assert(ffi.os == 'OSX', 'platform not OSX')
 
 ffi.cdef[[
 enum {

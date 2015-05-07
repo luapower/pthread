@@ -1,5 +1,6 @@
 --cdefs for pthread on EGLIBC 2.11.1 from Ubuntu 10.04
 local ffi = require'ffi'
+assert(ffi.os == 'Linux', 'platform not Linux')
 
 ffi.cdef[[
 enum {
