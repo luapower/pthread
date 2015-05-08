@@ -31,27 +31,26 @@ enum {
 
 typedef int pid_t;
 typedef unsigned short mode_t;
+typedef struct pthread_t { uintptr_t _; } pthread_t;
 
-typedef uintptr_t pthread_t;
-typedef struct pthread_attr_t pthread_attr_t;
-struct pthread_attr_t {
+struct sched_param {
+  int sched_priority;
+};
+typedef struct pthread_attr_t {
     unsigned p_state;
     void *stack;
     size_t s_size;
     struct sched_param param;
-};
-typedef long pthread_once_t;
-typedef void *pthread_mutex_t;
-typedef void *pthread_cond_t;
-typedef void *pthread_rwlock_t;
-typedef unsigned pthread_mutexattr_t;
-typedef int pthread_condattr_t;
-typedef int pthread_rwlockattr_t;
-typedef unsigned pthread_key_t;
-struct sched_param {
-  int sched_priority;
-};
-typedef void *sem_t;
+} pthread_attr_t;
+typedef struct { long _; } pthread_once_t;
+typedef struct pthread_mutex_t { void *_; } pthread_mutex_t;
+typedef struct pthread_cond_t { void *_; } pthread_cond_t;
+typedef struct pthread_rwlock_t { void *_; } pthread_rwlock_t;
+typedef struct pthread_mutexattr_t { unsigned _; } pthread_mutexattr_t;
+typedef struct { int _; } pthread_condattr_t;
+typedef struct { int _; } pthread_rwlockattr_t;
+typedef struct pthread_key_t { unsigned _; } pthread_key_t;
+typedef struct sem_t { void *_; } sem_t;
 
 // for pthread_cleanup_push()/_pop()
 typedef struct _pthread_cleanup _pthread_cleanup;

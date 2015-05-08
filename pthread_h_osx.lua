@@ -31,55 +31,50 @@ enum {
 
 typedef int32_t pid_t;
 typedef uint16_t mode_t;
+typedef struct pthread_t { void *_; } pthread_t;
 ]]
 
 if ffi.abi'32bit' then
 ffi.cdef[[
-struct _opaque_pthread_t {
- long __sig;
- struct __darwin_pthread_handler_rec *__cleanup_stack;
- char __opaque[4088];
-};
-
-struct _opaque_pthread_attr_t {
+typedef struct pthread_attr_t {
  long __sig;
  char __opaque[36];
-};
+} pthread_attr_t;
 
-struct _opaque_pthread_once_t {
+typedef struct pthread_once_t {
  long __sig;
  char __opaque[4];
-};
+} pthread_once_t;
 
-struct _opaque_pthread_mutex_t {
+typedef struct pthread_mutex_t {
  long __sig;
  char __opaque[40];
-};
+} pthread_mutex_t;
 
-struct _opaque_pthread_cond_t {
+typedef struct pthread_cond_t {
  long __sig;
  char __opaque[24];
-};
+} pthread_cond_t;
 
-struct _opaque_pthread_rwlock_t {
+typedef struct pthread_rwlock_t {
  long __sig;
  char __opaque[124];
-};
+} pthread_rwlock_t;
 
-struct _opaque_pthread_mutexattr_t {
+typedef struct pthread_mutexattr_t {
  long __sig;
  char __opaque[8];
-};
+} pthread_mutexattr_t;
 
-struct _opaque_pthread_condattr_t {
+typedef struct pthread_condattr_t {
  long __sig;
  char __opaque[4];
-};
+} pthread_condattr_t;
 
-struct _opaque_pthread_rwlockattr_t {
+typedef struct pthread_rwlockattr_t {
  long __sig;
  char __opaque[12];
-};
+} pthread_rwlockattr_t;
 
 // for pthread_cleanup_push()/_pop()
 struct __darwin_pthread_handler_rec {
@@ -90,12 +85,6 @@ struct __darwin_pthread_handler_rec {
 ]]
 else --x64
 ffi.cdef[[
-typedef struct pthread_t {
- long __sig;
- struct __darwin_pthread_handler_rec *__cleanup_stack;
- char __opaque[8176];
-} *pthread_t;
-
 typedef struct pthread_attr_t {
  long __sig;
  char __opaque[56];
@@ -139,7 +128,7 @@ typedef struct pthread_rwlockattr_t {
 end
 
 ffi.cdef[[
-typedef unsigned long pthread_key_t;
+typedef struct pthread_key_t { unsigned long _; } pthread_key_t;
 struct sched_param {
 	int sched_priority;
 	char __opaque[4];

@@ -31,87 +31,114 @@ enum {
 
 typedef int pid_t;
 typedef unsigned int mode_t;
-
-typedef unsigned long int pthread_t;
+typedef struct pthread_t { unsigned long int _; } pthread_t;
 ]]
 
 if ffi.abi'32bit' then
 ffi.cdef[[
-typedef union {
-  char __size[36];
-  long int __align;
+typedef struct pthread_attr_t {
+	union {
+		char __size[36];
+		long int __align;
+	};
 } pthread_attr_t;
 
-typedef union {
-  char __size[24];
-  long int __align;
+typedef struct pthread_mutex_t {
+	union {
+		char __size[24];
+		long int __align;
+	};
 } pthread_mutex_t;
 
-typedef union {
-  char __size[48];
-  long long int __align;
+typedef struct pthread_cond_t {
+	union {
+		char __size[48];
+		long long int __align;
+	};
 } pthread_cond_t;
 
-typedef union {
-  char __size[32];
-  long int __align;
+typedef struct pthread_rwlock_t {
+	union {
+		char __size[32];
+		long int __align;
+	};
 } pthread_rwlock_t;
 
-typedef union {
-  char __size[16];
-  long int __align;
+typedef struct sem_t {
+	union {
+		char __size[16];
+		long int __align;
+	};
 } sem_t;
 ]]
 else --x64
 ffi.cdef[[
-typedef union {
-  char __size[56];
-  long int __align;
+typedef struct pthread_attr_t {
+	union {
+		char __size[56];
+		long int __align;
+	};
 } pthread_attr_t;
 
-typedef union {
-  char __size[40];
-  long int __align;
+typedef struct pthread_mutex_t {
+	union {
+		char __size[40];
+		long int __align;
+	};
 } pthread_mutex_t;
 
-typedef union {
-  char __size[48];
-  long long int __align;
+typedef struct pthread_cond_t {
+	union {
+		char __size[48];
+		long long int __align;
+	};
 } pthread_cond_t;
 
-typedef union {
-  char __size[56];
-  long int __align;
+typedef struct pthread_rwlock_t {
+	union {
+		char __size[56];
+		long int __align;
+	};
 } pthread_rwlock_t;
 
-typedef union {
-  char __size[32];
-  long int __align;
+typedef struct sem_t {
+	union {
+		char __size[32];
+		long int __align;
+	};
 } sem_t;
 ]]
 end
 
 ffi.cdef[[
-typedef int pthread_once_t;
+typedef struct pthread_once_t { int _; } pthread_once_t;
 
-typedef union {
-  char __size[4];
-  int __align;
+typedef struct pthread_mutexattr_t {
+	union {
+		char __size[4];
+		int __align;
+	};
 } pthread_mutexattr_t;
 
-typedef union {
-  char __size[4];
-  int __align;
+typedef struct pthread_condattr_t {
+	union {
+		char __size[4];
+		int __align;
+	};
 } pthread_condattr_t;
 
-typedef union {
-  char __size[8];
-  long int __align;
+typedef struct pthread_rwlockattr_t {
+	union {
+		char __size[8];
+		long int __align;
+	};
 } pthread_rwlockattr_t;
 
-typedef unsigned int pthread_key_t;
+typedef struct pthread_key_t { unsigned int _; } pthread_key_t;
 
-struct sched_param { int __sched_priority; };
+struct sched_param {
+	int sched_priority;
+};
 
 // for pthread_cleanup_push()/_pop()
 struct _pthread_cleanup_buffer {
