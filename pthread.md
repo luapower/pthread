@@ -50,7 +50,7 @@ pthread.sleep(seconds)                          suspend the current thread
 pthread.nanosleep(seconds[, remain]) -> remain  same, but return remaining time
 ----------------------------------------------- ----------------------------------
 
-All functions raise errors but error messages are not included
+> All functions raise errors but error messages are not included
 and error codes are platform specific (use google).
 
 
