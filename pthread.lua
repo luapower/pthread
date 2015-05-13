@@ -14,7 +14,7 @@ local H = require'pthread_h'
 
 local function check(ok, ret)
 	if ok then return end
-	error(string.format('pthread error: %d', ret))
+	error(string.format('pthread error: %d\n%s', ret, debug.traceback()), 3)
 end
 
 --return-value checker for '0 means OK' functions
@@ -23,15 +23,20 @@ local function checkz(ret)
 end
 
 --return-value checker for 'try' functions
-local function checkbusy(tryfunc, obj)
-	local ret = tryfunc(obj)
+local function checkbusy(ret)
 	check(ret == 0 or ret == H.EBUSY, ret)
 	return ret == 0
 end
 
---seconds to timespec conversion
-local function timespec(sec)
-	local int, frac = math.modf(sec)
+--return-value checker for 'timedwait' functions
+local function checktimeout(ret)
+	check(ret == 0 or ret == H.ETIMEDOUT, ret)
+	return ret == 0
+end
+
+--os.time() time to timespec conversion
+local function timespec(time)
+	local int, frac = math.modf(time)
 	return ffi.new('struct timespec', int, frac * 10^9)
 end
 
@@ -46,13 +51,13 @@ function M.new(func_cb, attrs)
 	if attrs then
 		attr = ffi.new'pthread_attr_t'
 		C.pthread_attr_init(attr)
-		if attrs.detached then
+		if attrs.detached then --not very useful, see M.detach()
 			checkz(C.pthread_attr_setdetachstate(attr, C.PTHREAD_CREATE_DETACHED))
 		end
-		if attrs.priority then
+		if attrs.priority then --useless on Linux for non-root users
 			checkz(C.pthread_attr_setinheritsched(attr, C.PTHREAD_EXPLICIT_SCHED))
 			local param = ffi.new'struct sched_param'
-			param.sched_priority = prio
+			param.sched_priority = attrs.priority
 			checkz(C.pthread_attr_setschedparam(attr, param))
 		end
 		if attrs.stackaddr then
@@ -70,18 +75,14 @@ function M.new(func_cb, attrs)
 	return thread
 end
 
-M.self = C.pthread_self --current thread
+--current thread
+function M.self()
+	return ffi.new('pthread_t', C.pthread_self())
+end
 
 --test two thread objects for equality.
 function M.equal(t1, t2)
 	return C.pthread_equal(t1, t2) ~= 0
-end
-
---call from thread to exit with a status code (probably unsafe,
---though there is a test for it that passes but it might leak).
---call from the main thread to wait on all threads.
-function M.exit(code)
-	checkz(C.pthread_exit(code))
 end
 
 --wait for a thread to finish.
@@ -91,45 +92,11 @@ function M.join(thread)
 	return status[0]
 end
 
---cancel a thread, either synchronously (when the thread calls testcancel())
---or asynchronously (inside various OS calls). neither one is probably safe.
-function M.cancel(thread)
-	checkz(C.pthread_cancel(thread))
-end
-
---set a thread loose (not very useful because a Lua state can't free itself
---from the thread callback, unless you don't care for the leak)
+--set a thread loose (not very useful because it's hard to know when
+--a detached thread has died so that another thread can clean up after it,
+--and a Lua state can't free itself up from within either).
 function M.detach(thread)
 	checkz(C.pthread_detach(thread))
-end
-
---create a cancelation point (probably unsafe to call form a Lua state).
-M.testcancel = C.pthread_testcancel
-
-local cstates = {
-	[true]    = C.PTHREAD_CANCEL_ENABLE,
-	[false]   = C.PTHREAD_CANCEL_DISABLE,
-}
-function M.setcancelable(state)
-	assert(state ~= nil, 'state expected')
-	oldstate = oldstate or ffi.new'int[1]'
-	checkz(C.pthread_setcancelstate(cstates[state], oldstate))
-	return oldstate[1] == C.PTHREAD_CANCEL_ENABLE
-end
-
-local ctypes = {
-	deferred = C.PTHREAD_CANCEL_DEFERRED,
-	async    = C.PTHREAD_CANCEL_ASYNCHRONOUS, --unsafe!
-}
-local ctypenames = {
-	[C.PTHREAD_CANCEL_DEFERRED]     = 'deferred',
-	[C.PTHREAD_CANCEL_ASYNCHRONOUS] = 'async',
-}
-function M.setcanceltype(type)
-	assert(type ~= nil, 'type expected')
-	oldtype = oldtype or ffi.new'int[1]'
-	checkz(C.pthread_setcanceltype(ctypes[type], oldtype))
-	return ctypenames[oldtype[1]]
 end
 
 --set thread priority: level is between min_priority() and max_priority().
@@ -160,10 +127,7 @@ ffi.metatype('pthread_t', {
 		__index = {
 			equal = M.equal,
 			join = M.join,
-			cancel = M.cancel,
 			detach = M.detach,
-			setcancelable = M.setcancelable,
-			setcanceltype = M.setcanceltype,
 			priority = M.priority,
 		},
 	})
@@ -245,8 +209,9 @@ function cond.wait(cond, mutex)
 	checkz(C.pthread_cond_wait(cond, mutex))
 end
 
-function cond.timedwait(cond, mutex, sec)
-	checkz(C.pthread_cond_timedwait(cond, mutex, timespec(sec)))
+--NOTE: `time` is time per os.time(), not a time period.
+function cond.timedwait(cond, mutex, time)
+	return checktimeout(C.pthread_cond_timedwait(cond, mutex, timespec(time)))
 end
 
 ffi.metatype('pthread_cond_t', {__index = cond})
@@ -275,67 +240,36 @@ function rwlock.readlock(rwlock)
 end
 
 function rwlock.trywritelock(rwlock)
-	checkbusy(C.pthread_rwlock_trywrlock(rwlock))
+	return checkbusy(C.pthread_rwlock_trywrlock(rwlock))
 end
 
 function rwlock.tryreadlock(rwlock)
-	checkbusy(C.pthread_rwlock_tryrdlock(rwlock))
+	return checkbusy(C.pthread_rwlock_tryrdlock(rwlock))
 end
 
 function rwlock.unlock(rwlock)
 	checkz(C.pthread_rwlock_unlock(rwlock))
 end
 
---keys
-
---int pthread_key_create(pthread_key_t *key, void (* dest)(void *));
---int pthread_key_delete(pthread_key_t key);
---void *pthread_getspecific(pthread_key_t key);
---int pthread_setspecific(pthread_key_t key, const void *value);
+ffi.metatype('pthread_rwlock_t', {__index = rwlock})
 
 local SC = ffi.os == 'Windows' and C or ffi.C
 function M.yield()
 	checkz(SC.sched_yield())
 end
 
---semaphores
-
-local sem = {}
-
-function M.sem(val)
-	local sem = ffi.new'sem_t'
-	checkz(C.sem_init(sem, C.PTHREAD_PROCESS_PRIVATE, val))
-	ffi.gc(sem, sem.free)
-	return sem
-end
-
-function sem.free(sem)
-	checkz(C.sem_destroy(sem))
-	ffi.gc(sem, nil)
-end
-
-function sem.wait(sem)
-	checkz(C.sem_wait(sem))
-end
-
-function sem.trywait(sem)
-	return checkbusy(C.sem_trywait(sem))
-end
-
-function sem.post(sem)
-	checkz(C.sem_post(sem))
-end
-
-function sem.value()
-	local sval = ffi.new'int[1]'
-	checkz(C.sem_getvalue(sem, sval))
-	return sval[0]
-end
-
-ffi.metatype('sem_t', {__index = sem})
-
 --sleep
 
 M.sleep = H.sleep
+
+function M.nanosleep(s, remain)
+	remain = remain or ffi.new'struct timespec'
+	local ret = C.nanosleep(timespec(s), remain)
+	while ret == H.EINTR do
+		ret = C.nanosleep(remain, remain)
+	end
+	checkz(ret)
+	return remain
+end
 
 return M

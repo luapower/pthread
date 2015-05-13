@@ -18,10 +18,7 @@ __threads__
 pthread.new(func_ptr[, attrs]) -> th            create and start a new thread
 th:equal(other_th) -> true | false              check if two threads are equal
 th:join() -> status                             wait for a thread to finish
-th:cancel()                                     cancel a thread (possibly unsafe)
 th:detach()                                     detach a thread
-th:setcancelable(true|false) -> oldval          set thread as cancelable or not
-th:setcanceltype('deferred'|'async') -> oldtype set cancelation type
 th:priority(new_priority)                       set thread priority
 th:priority() -> priority                       get thread priority
 pthread.min_priority() -> priority              get min. priority
@@ -38,10 +35,10 @@ cond:free()                                     free the condition variable
 cond:broadcast()                                broadcast
 cond:signal()                                   signal
 cond:wait(mutex)                                wait
-cond:timedwait(mutex, seconds) -> true | false  wait with timeout
+cond:timedwait(mutex, time) -> true | false     wait with timeout
 __read/write locks__
-pthread.rwlock() -> rwlock                      create a r/w  lock
-rwlock:free()                                   free a r/w  lock
+pthread.rwlock() -> rwlock                      create a r/w lock
+rwlock:free()                                   free a r/w lock
 rwlock:writelock()                              lock for writing
 rwlock:readlock()                               lock for reading
 rwlock:trywritelock() -> true | false           try to lock for writing
@@ -49,15 +46,12 @@ rwlock:tryreadlock() -> true | false            try to lock for reading
 rwlock:unlock()                                 unlock the r/w lock
 __scheduler__
 pthread.yield()                                 relinquish control to the scheduler
-pthread.sleep(seconds)                          suspend current thread
-__semaphores__
-pthread.sem(val) -> sem                         create a semaphore
-sem:free()                                      free a semaphore
-sem:wait()                                      wait on a semaphore
-sem:trywait() -> true | false                   check if a semaphore is busy
-sem:post()                                      increment the value
-sem:value() -> val                              return the current value
+pthread.sleep(seconds)                          suspend the current thread
+pthread.nanosleep(seconds[, remain]) -> remain  same, but return remaining time
 ----------------------------------------------- ----------------------------------
+
+All functions raise errors but error messages are not included
+and error codes are platform specific (use google).
 
 
 ## Portability notes
@@ -68,21 +62,21 @@ cover different parts of the API.
 
 The list of currently supported pthreads implementations are:
 
-  * winpthreads 0.5.0 from Mingw-w64 4.9.2 (binary included)
-  * libpthread from EGLIBC 2.11 (tested on Ubuntu 10.04)
-  * libpthread from OSX SDK 10.10 (tested on OSX 10.9)
+  * winpthreads 0.5.0 from Mingw-w64 4.9.2 (tested on WinXP 32bit and 64bit)
+  * libpthread from gnu libc (tested on Ubuntu 10.04, x86 and x64)
+  * libpthread from OSX (tested on OSX 10.9 with 32bit and 64bit binaries)
 
 Only functionality that is common _to all_ of the above is available.
-Winpthreads dumbs down the API the most (no shared objects, no scheduling
-policies, no priority protocols), but OSX too (no timedwaits, no spin-locks,
-no barriers, no priority protocols) and even Linux (setting priority
-levels needs root access). Functions that don't make sense with Lua
-(pthread_once) or are stubs in one or more implementations
-(pthread_setconcurrency) or are unsafe (pthread_kill) were also dropped.
-All in all you get a pretty thin library with just the basics covered.
-The good news is that this is really all you need to write portable apps.
-In any case, I cannot personally support extra functionality,
-but patches welcome.
+Winpthreads dumbs down the API the most (no process-shared objects,
+no real-time extensions, etc.), but OSX too (no timed waits, no semaphores, no barriers, etc.) and even Linux (setting priority levels needs root access).
+Functions that don't make sense with Lua (pthread_once) or are stubs
+in one or more implementations (pthread_setconcurrency) or are unsafe
+to use with Lua states (killing, cancelation) were also dropped. All in all
+you get a pretty thin library with just the basics covered.
+The good news is that this is really all you need for most apps.
+A more comprehensive but still portable threading library would have to
+be implemented on top of native synchronization primitives. In any case,
+I cannot personally support extra functionality, but patches welcome.
 
 Next are a few tips to get a rough idea of the portability situation.
 
@@ -121,4 +115,4 @@ The above will use gcc to preprocess the headers and generate a
 as a starting point for a binding and/or to check ABI differences.
 
 Next step is to look at the source code for winpthreads and find out what
-is really implemented.
+is really implemented (and how).

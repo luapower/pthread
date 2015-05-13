@@ -22,7 +22,8 @@ enum {
 	PTHREAD_STACK_MIN = 16384,
 };
 
-typedef struct pthread_t { unsigned long int _; } pthread_t;
+typedef unsigned long int real_pthread_t;
+typedef struct { real_pthread_t _; } pthread_t;
 ]]
 
 if ffi.abi'32bit' then
@@ -54,13 +55,6 @@ typedef struct pthread_rwlock_t {
 		long int __align;
 	};
 } pthread_rwlock_t;
-
-typedef struct sem_t {
-	union {
-		char __size[16];
-		long int __align;
-	};
-} sem_t;
 ]]
 else --x64
 ffi.cdef[[
@@ -91,13 +85,6 @@ typedef struct pthread_rwlock_t {
 		long int __align;
 	};
 } pthread_rwlock_t;
-
-typedef struct sem_t {
-	union {
-		char __size[32];
-		long int __align;
-	};
-} sem_t;
 ]]
 end
 
@@ -129,10 +116,14 @@ struct sched_param {
 	int sched_priority;
 };
 
-unsigned int sleep(unsigned int seconds);
+unsigned int usleep(unsigned int seconds);
 ]]
 
 local H = {}
+
+H.EINTR     = 4
+H.EBUSY     = 16
+H.ETIMEDOUT = 110
 
 local function zeroinit() return end
 H.PTHREAD_MUTEX_INITIALIZER  = zeroinit
@@ -140,7 +131,7 @@ H.PTHREAD_RWLOCK_INITIALIZER = zeroinit
 H.PTHREAD_COND_INITIALIZER   = zeroinit
 
 function H.sleep(s)
-	ffi.C.sleep(s)
+	ffi.C.usleep(s * 10^6)
 end
 
 return H

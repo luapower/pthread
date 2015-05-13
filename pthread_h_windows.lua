@@ -17,7 +17,7 @@ enum {
 	PTHREAD_CANCEL_DEFERRED = 0,
 	PTHREAD_CANCEL_ASYNCHRONOUS = 0x02,
 	PTHREAD_CANCELED = 0xDEADBEEF,
-	PTHREAD_INHERIT_SCHED = 0x08,
+	PTHREAD_EXPLICIT_SCHED = 0,
 	PTHREAD_PROCESS_PRIVATE = 0,
 	PTHREAD_MUTEX_NORMAL = 0,
 	PTHREAD_MUTEX_ERRORCHECK = 1,
@@ -26,7 +26,8 @@ enum {
 	PTHREAD_STACK_MIN = 8192,
 };
 
-typedef struct pthread_t { uintptr_t _; } pthread_t;
+typedef uintptr_t real_pthread_t;
+typedef struct { real_pthread_t _; } pthread_t;
 
 struct sched_param {
   int sched_priority;
@@ -46,16 +47,18 @@ typedef struct { int _; } pthread_rwlockattr_t;
 
 typedef struct pthread_key_t { unsigned _; } pthread_key_t;
 
-typedef struct sem_t { void *_; } sem_t;
-
 void Sleep(uint32_t ms);
 ]]
 
 local H = {}
 
+H.EINTR     = 4
+H.EBUSY     = 16
+H.ETIMEDOUT = 138
+
 local GENERIC_INITIALIZER = ffi.cast('void*', -1)
-function H.PTHREAD_MUTEX_INITIALIZER() return GENERIC_INITIALIZER end
-function H.PTHREAD_COND_INITIALIZER() return GENERIC_INITIALIZER end
+function H.PTHREAD_MUTEX_INITIALIZER()  return GENERIC_INITIALIZER end
+function H.PTHREAD_COND_INITIALIZER()   return GENERIC_INITIALIZER end
 function H.PTHREAD_RWLOCK_INITIALIZER() return GENERIC_INITIALIZER end
 
 function H.sleep(s)
