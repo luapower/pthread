@@ -62,6 +62,7 @@ Use it with [luastate]:
 
 ~~~{.lua}
 local ffi = require'ffi'
+local pthread = require'pthread'
 local luastate = require'luastate'
 
 --make a new Lua state
