@@ -35,7 +35,7 @@ cond:free()                                     free the condition variable
 cond:broadcast()                                broadcast
 cond:signal()                                   signal
 cond:wait(mutex)                                wait
-cond:timedwait(mutex, time) -> true | false     wait with timeout
+cond:timedwait(mutex, time) -> true | false     wait with os.time() timeout
 __read/write locks__
 pthread.rwlock() -> rwlock                      create a r/w lock
 rwlock:free()                                   free a r/w lock
