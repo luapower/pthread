@@ -182,7 +182,7 @@ end
 
 ffi.metatype('pthread_mutex_t', {__index = mutex})
 
---conditions
+--condition variables
 
 local cond = {}
 
