@@ -8,8 +8,8 @@ local H = require(lib)
 
 ffi.cdef[[
 struct timespec {
-	time_t tv_sec;
-	long tv_nsec;
+	time_t s;
+	long ns;
 };
 
 int pthread_create(pthread_t *th, const pthread_attr_t *attr, void *(*func)(void *), void *arg);
@@ -59,6 +59,7 @@ int sched_get_priority_min(int pol);
 int sched_get_priority_max(int pol);
 
 int nanosleep(const struct timespec *request, struct timespec *remain);
+int clock_gettime(int clock_id, struct timespec *tp); // not on OSX
 ]]
 
 return H

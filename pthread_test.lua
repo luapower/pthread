@@ -295,6 +295,13 @@ local function test_sleep(s, ss, func)
 	print'done'
 end
 
+local function test_time()
+	local t = pthread.monotime()
+	print('monotonic time  ', t, pthread.monotime() - t)
+	local t = pthread.time()
+	print('wall clock time ', t, pthread.time() - t, os.time())
+end
+
 local function test_all()
 	test_priority_range()
 	test_thread_self_equal()
@@ -305,6 +312,7 @@ local function test_all()
 	test_rwlock(50000, 10, 50000, 1)
 	test_sleep(0.25, 0.05, pthread.sleep)
 	test_sleep(0.25, 0.05, pthread.nanosleep)
+	test_time()
 end
 
 test_all()

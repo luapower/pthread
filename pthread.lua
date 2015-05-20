@@ -34,7 +34,7 @@ local function checktimeout(ret)
 	return ret == 0
 end
 
---os.time() time to timespec conversion
+--convert a time returned by os.time() or pthread.time() to timespec
 local function timespec(time)
 	local int, frac = math.modf(time)
 	return ffi.new('struct timespec', int, frac * 10^9)
@@ -270,6 +270,25 @@ function M.nanosleep(s, remain)
 	end
 	checkz(ret)
 	return remain
+end
+
+--time
+
+local clock_gettime =
+	ffi.os == 'Linux'   and ffi.load'rt'.clock_gettime or  --librt implementation
+	ffi.os == 'OSX'     and H.clock_gettime or             --Lua emulation
+	ffi.os == 'Windows' and C.clock_gettime                --winpthreads emulation
+
+local t = ffi.new'struct timespec'
+
+function M.time()
+	checkz(clock_gettime(C.CLOCK_REALTIME, t))
+	return tonumber(t.s) + tonumber(t.ns) / 10^9
+end
+
+function M.monotime()
+	checkz(clock_gettime(C.CLOCK_MONOTONIC, t))
+	return tonumber(t.s) + tonumber(t.ns) / 10^9
 end
 
 return M

@@ -24,6 +24,8 @@ enum {
 	PTHREAD_MUTEX_RECURSIVE = 2,
 	SCHED_OTHER = 0,
 	PTHREAD_STACK_MIN = 8192,
+	CLOCK_REALTIME = 0,
+	CLOCK_MONOTONIC = 1,
 };
 
 typedef uintptr_t real_pthread_t;

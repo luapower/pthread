@@ -20,6 +20,8 @@ enum {
 	PTHREAD_MUTEX_RECURSIVE = 2,
 	SCHED_OTHER = 1,
 	PTHREAD_STACK_MIN = 8192,
+	CLOCK_REALTIME = 1, // CALENDAR_CLOCK
+	CLOCK_MONOTONIC = 0, // SYSTEM_CLOCK
 };
 
 typedef void *real_pthread_t;
@@ -136,6 +138,35 @@ function H.PTHREAD_COND_INITIALIZER()   return _PTHREAD_COND_SIG_init end
 
 function H.sleep(s)
 	ffi.C.usleep(s * 10^6)
+end
+
+--clock_gettime() emulation
+
+ffi.cdef[[
+// NOTE: unlike timespec, mach_timespec is 32bit on x64,
+// which means it will wrap around in year 2038.
+typedef struct mach_timespec {
+	unsigned int tv_sec;
+	int tv_nsec;
+} mach_timespec_t;
+
+int host_get_clock_service(unsigned int host, int clock_id, int *clock_serv);
+int clock_get_time(int clock_serv, mach_timespec_t *cur_time);
+unsigned int mach_host_self(void);
+unsigned int mach_task_self_;
+int mach_port_deallocate(int task, int name);
+]]
+
+local cclock = ffi.new'int[1]'
+local mts = ffi.new'mach_timespec_t'
+local C = ffi.C
+function H.clock_gettime(clk_id, tp)
+	C.host_get_clock_service(C.mach_host_self(), clk_id, cclock)
+	local retval = C.clock_get_time(cclock[0], mts)
+	C.mach_port_deallocate(C.mach_task_self_, cclock[0])
+	tp.s = mts.tv_sec
+	tp.ns = mts.tv_nsec
+	return retval
 end
 
 return H

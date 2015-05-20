@@ -48,6 +48,9 @@ __scheduler__
 pthread.yield()                                 relinquish control to the scheduler
 pthread.sleep(seconds)                          suspend the current thread
 pthread.nanosleep(seconds[, remain]) -> remain  same, but return remaining time
+__time__
+pthread.time() -> s                             os.time() with more precision
+pthread.monotime() -> s                         monotonic time with even more precision
 ----------------------------------------------- ----------------------------------
 
 > `func_ptr` is a C callback declared as: `void *(*func_ptr)(void *arg)`.
@@ -55,6 +58,13 @@ Its return value is returned by `th:join()`.
 
 > All functions raise errors but error messages are not included
 and error codes are platform specific (use google).
+
+> pthread.time() returns a unix timestamp with ~4 digits of subsecond
+precision on all platforms. Although not specified, LuaJIT's os.time() also
+returns a unix timestamp on all platforms, but only with second precision.
+Arithmetically comparing os.time() or pthread.time() timestamps between
+different OSs is thus supported. OTOH pthread.monotime() comparisons
+are only meaningful with timestamps collected in the same session.
 
 ## Howto
 
