@@ -24,8 +24,6 @@ enum {
 	PTHREAD_MUTEX_RECURSIVE = 2,
 	SCHED_OTHER = 0,
 	PTHREAD_STACK_MIN = 8192,
-	CLOCK_REALTIME = 0,
-	CLOCK_MONOTONIC = 1,
 };
 
 typedef uintptr_t real_pthread_t;
@@ -46,15 +44,10 @@ typedef struct pthread_rwlock_t { void *_; } pthread_rwlock_t;
 typedef struct pthread_mutexattr_t { unsigned _; } pthread_mutexattr_t;
 typedef struct { int _; } pthread_condattr_t;
 typedef struct { int _; } pthread_rwlockattr_t;
-
-typedef struct pthread_key_t { unsigned _; } pthread_key_t;
-
-void Sleep(uint32_t ms);
 ]]
 
 local H = {}
 
-H.EINTR     = 4
 H.EBUSY     = 16
 H.ETIMEDOUT = 138
 
@@ -62,9 +55,5 @@ local GENERIC_INITIALIZER = ffi.cast('void*', -1)
 function H.PTHREAD_MUTEX_INITIALIZER()  return GENERIC_INITIALIZER end
 function H.PTHREAD_COND_INITIALIZER()   return GENERIC_INITIALIZER end
 function H.PTHREAD_RWLOCK_INITIALIZER() return GENERIC_INITIALIZER end
-
-function H.sleep(s)
-	ffi.C.Sleep(s * 1000)
-end
 
 return H

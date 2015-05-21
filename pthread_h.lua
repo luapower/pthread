@@ -7,10 +7,10 @@ local lib = 'pthread_h_'..ffi.os:lower()
 local H = require(lib)
 
 ffi.cdef[[
-struct timespec {
+typedef struct {
 	time_t s;
 	long ns;
-};
+} timespec;
 
 int pthread_create(pthread_t *th, const pthread_attr_t *attr, void *(*func)(void *), void *arg);
 real_pthread_t pthread_self(void);
@@ -44,7 +44,7 @@ int pthread_cond_destroy(pthread_cond_t *cv);
 int pthread_cond_broadcast(pthread_cond_t *cv);
 int pthread_cond_signal(pthread_cond_t *cv);
 int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex);
-int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct timespec *t);
+int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const timespec *t);
 
 int pthread_rwlock_init(pthread_rwlock_t *l, const pthread_rwlockattr_t *attr);
 int pthread_rwlock_destroy(pthread_rwlock_t *l);
@@ -57,9 +57,6 @@ int pthread_rwlock_unlock(pthread_rwlock_t *l);
 int sched_yield(void);
 int sched_get_priority_min(int pol);
 int sched_get_priority_max(int pol);
-
-int nanosleep(const struct timespec *request, struct timespec *remain);
-int clock_gettime(int clock_id, struct timespec *tp); // not on OSX
 ]]
 
 return H

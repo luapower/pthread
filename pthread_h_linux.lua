@@ -20,8 +20,6 @@ enum {
 	PTHREAD_MUTEX_RECURSIVE = 1,
 	SCHED_OTHER = 0,
 	PTHREAD_STACK_MIN = 16384,
-	CLOCK_REALTIME = 0,
-	CLOCK_MONOTONIC = 1,
 };
 
 typedef unsigned long int real_pthread_t;
@@ -112,18 +110,13 @@ typedef struct pthread_rwlockattr_t {
 	};
 } pthread_rwlockattr_t;
 
-typedef struct pthread_key_t { unsigned int _; } pthread_key_t;
-
 struct sched_param {
 	int sched_priority;
 };
-
-unsigned int usleep(unsigned int seconds);
 ]]
 
 local H = {}
 
-H.EINTR     = 4
 H.EBUSY     = 16
 H.ETIMEDOUT = 110
 
@@ -131,9 +124,5 @@ local function zeroinit() return end
 H.PTHREAD_MUTEX_INITIALIZER  = zeroinit
 H.PTHREAD_RWLOCK_INITIALIZER = zeroinit
 H.PTHREAD_COND_INITIALIZER   = zeroinit
-
-function H.sleep(s)
-	ffi.C.usleep(s * 10^6)
-end
 
 return H

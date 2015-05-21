@@ -61,10 +61,8 @@ local function test_thread_self_equal()
 		local pthread = require'pthread'
 		local ffi = require'ffi'
 		local th = pthread.self()
-		pthread.sleep(0.1)
 		return ffi.string(th, ffi.sizeof(th))
 	end)
-	--pthread.sleep(0.1)
 	local _, ths = join()
 	local th2 = ffi.new'pthread_t'
 	ffi.copy(th2, ths, #ths)
@@ -283,25 +281,6 @@ local function test_rwlock(readtimes, readthreads, writetimes, writethreads)
 	rwlock:free()
 end
 
---test sleep or nanosleep
-
-local function test_sleep(s, ss, func)
-	func = func or pthread.sleep
-	io.stdout:write(string.format(
-		'sleeping %gs in %gs increments...', s, ss))
-	for i=1,s*1/ss do
-		func(ss)
-	end
-	print'done'
-end
-
-local function test_time()
-	local t = pthread.monotime()
-	print('monotonic time  ', t, pthread.monotime() - t)
-	local t = pthread.time()
-	print('wall clock time ', t, pthread.time() - t, os.time())
-end
-
 local function test_all()
 	test_priority_range()
 	test_thread_self_equal()
@@ -310,9 +289,6 @@ local function test_all()
 	test_mutex(50000, 10)
 	test_cond_var(100000, 1)
 	test_rwlock(50000, 10, 50000, 1)
-	test_sleep(0.25, 0.05, pthread.sleep)
-	test_sleep(0.25, 0.05, pthread.nanosleep)
-	test_time()
 end
 
 test_all()

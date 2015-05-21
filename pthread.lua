@@ -35,9 +35,11 @@ local function checktimeout(ret)
 end
 
 --convert a time returned by os.time() or pthread.time() to timespec
-local function timespec(time)
+local function timespec(time, ts)
 	local int, frac = math.modf(time)
-	return ffi.new('struct timespec', int, frac * 10^9)
+	ts.s = int
+	ts.ns = frac * 10^9
+	return ts
 end
 
 --threads
@@ -210,8 +212,10 @@ function cond.wait(cond, mutex)
 end
 
 --NOTE: `time` is time per os.time(), not a time period.
+local ts
 function cond.timedwait(cond, mutex, time)
-	return checktimeout(C.pthread_cond_timedwait(cond, mutex, timespec(time)))
+ 	ts = ts or ffi.new'timespec'
+	return checktimeout(C.pthread_cond_timedwait(cond, mutex, timespec(time, ts)))
 end
 
 ffi.metatype('pthread_cond_t', {__index = cond})
@@ -256,39 +260,6 @@ ffi.metatype('pthread_rwlock_t', {__index = rwlock})
 local SC = ffi.os == 'Windows' and C or ffi.C
 function M.yield()
 	checkz(SC.sched_yield())
-end
-
---sleep
-
-M.sleep = H.sleep
-
-function M.nanosleep(s, remain)
-	remain = remain or ffi.new'struct timespec'
-	local ret = C.nanosleep(timespec(s), remain)
-	while ret == H.EINTR do
-		ret = C.nanosleep(remain, remain)
-	end
-	checkz(ret)
-	return remain
-end
-
---time
-
-local clock_gettime =
-	ffi.os == 'Linux'   and ffi.load'rt'.clock_gettime or  --librt implementation
-	ffi.os == 'OSX'     and H.clock_gettime or             --Lua emulation
-	ffi.os == 'Windows' and C.clock_gettime                --winpthreads emulation
-
-local t = ffi.new'struct timespec'
-
-function M.time()
-	checkz(clock_gettime(C.CLOCK_REALTIME, t))
-	return tonumber(t.s) + tonumber(t.ns) / 10^9
-end
-
-function M.monotime()
-	checkz(clock_gettime(C.CLOCK_MONOTONIC, t))
-	return tonumber(t.s) + tonumber(t.ns) / 10^9
 end
 
 return M
