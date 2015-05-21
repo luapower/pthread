@@ -114,7 +114,7 @@ Create and start a new thread and return the thread object.
 `func_ptr` is a C callback declared as: `void *(*func_ptr)(void *arg)`.
 Its return value is returned by `th:join()`.
 
-An optional attrs table can have the fields:
+The optional attrs table can have the fields:
 
   * `detached = true` - start detached (not very useful with Lua states)
   * `priority = n` - thread priority; must be between pthread.min_priority()
@@ -125,7 +125,7 @@ An optional attrs table can have the fields:
 
 ### `pthread.mutex([mattrs]) -> mutex`
 
-Create a mutex. The optional mattrs tables can have the fields:
+Create a mutex. The optional mattrs table can have the fields:
 
   * `type = 'normal' | 'recursive' | 'errorcheck'`:
     * 'normal' (default) - non-recursive mutex: locks are not counted
