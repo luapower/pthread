@@ -48,10 +48,7 @@ __scheduler__
 pthread.yield()                                 relinquish control to the scheduler
 ----------------------------------------------- ----------------------------------
 
-> `func_ptr` is a C callback declared as: `void *(*func_ptr)(void *arg)`.
-Its return value is returned by `th:join()`.
-
-> All functions raise errors but error messages are not included
+__NOTE:__ All functions raise errors but error messages are not included
 and error codes are platform specific (use google).
 
 ## Howto
@@ -107,6 +104,39 @@ thread:join()
 --close the Lua state
 state:close()
 ~~~
+
+## Reference
+
+### `pthread.new(func_ptr[, attrs]) -> th`
+
+Create and start a new thread and return the thread object.
+
+`func_ptr` is a C callback declared as: `void *(*func_ptr)(void *arg)`.
+Its return value is returned by `th:join()`.
+
+An optional attrs table can have the fields:
+
+  * `detached = true` - start detached (not very useful with Lua states)
+  * `priority = n` - thread priority; must be between pthread.min_priority()
+  and pthread.max_priority() -- in Linux these are both 0.
+  * `stackaddr = n` - stack address.
+  * `stacksize = n` - stack size in bytes (OS restrictions apply).
+
+
+### `pthread.mutex([mattrs]) -> mutex`
+
+Create a mutex. The optional mattrs tables can have the fields:
+
+  * `type = 'normal' | 'recursive' | 'errorcheck'`:
+    * 'normal' (default) - non-recursive mutex: locks are not counted
+    and not owned: the mutex can be unlocked by a different thread than
+    the one that locked it.
+    * 'recursive' - recursive mutex: locks are counted and owned: only
+    the thread that locked the mutex can unlock it.
+    * 'errorcheck' - non-recursive mutex with error checking: double-locks
+    and double-unlocks by the same thread result in error.
+
+
 
 ## Portability notes
 
