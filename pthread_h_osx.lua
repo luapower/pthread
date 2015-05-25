@@ -118,8 +118,8 @@ local H = {}
 H.EBUSY     = 16
 H.ETIMEDOUT = 60
 
-function H.PTHREAD_RWLOCK_INITIALIZER() return _PTHREAD_RWLOCK_SIG_init end
-function H.PTHREAD_MUTEX_INITIALIZER()  return _PTHREAD_MUTEX_SIG_init end
-function H.PTHREAD_COND_INITIALIZER()   return _PTHREAD_COND_SIG_init end
+function H.PTHREAD_RWLOCK_INITIALIZER(t) t.__sig = _PTHREAD_RWLOCK_SIG_init end
+function H.PTHREAD_MUTEX_INITIALIZER(t)  t.__sig = _PTHREAD_MUTEX_SIG_init end
+function H.PTHREAD_COND_INITIALIZER(t)   t.__sig = _PTHREAD_COND_SIG_init end
 
 return H

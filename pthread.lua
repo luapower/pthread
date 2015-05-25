@@ -144,8 +144,9 @@ local mtypes = {
 	recursive  = C.PTHREAD_MUTEX_RECURSIVE,
 }
 
-function M.mutex(mattrs)
-	local mutex = ffi.new('pthread_mutex_t', H.PTHREAD_MUTEX_INITIALIZER())
+function M.mutex(mattrs, space)
+	local mutex = space or ffi.new'pthread_mutex_t'
+	H.PTHREAD_MUTEX_INITIALIZER(mutex)
 	local mattr
 	if mattrs then
 		mattr = ffi.new'pthread_mutexattr_t'
@@ -160,7 +161,9 @@ function M.mutex(mattrs)
 		C.pthread_mutexattr_destroy(mattr)
 	end
 	checkz(ret)
-	ffi.gc(mutex, mutex.free)
+	if not space then
+		ffi.gc(mutex, mutex.free)
+	end
 	return mutex
 end
 
@@ -188,10 +191,14 @@ ffi.metatype('pthread_mutex_t', {__index = mutex})
 
 local cond = {}
 
-function M.cond()
-	local cond = ffi.new('pthread_cond_t', H.PTHREAD_COND_INITIALIZER())
+function M.cond(_, space)
+	local cond = space or ffi.new'pthread_cond_t'
+	H.PTHREAD_COND_INITIALIZER(cond)
 	checkz(C.pthread_cond_init(cond, nil))
-	return ffi.gc(cond, cond.free)
+	if not space then
+		ffi.gc(cond, cond.free)
+	end
+	return cond
 end
 
 function cond.free(cond)
@@ -224,10 +231,14 @@ ffi.metatype('pthread_cond_t', {__index = cond})
 
 local rwlock = {}
 
-function M.rwlock()
-	local rwlock = ffi.new('pthread_rwlock_t', H.PTHREAD_RWLOCK_INITIALIZER())
+function M.rwlock(_, space)
+	local rwlock = space or ffi.new'pthread_rwlock_t'
+	H.PTHREAD_RWLOCK_INITIALIZER(rwlock)
 	checkz(C.pthread_rwlock_init(rwlock, nil))
-	return ffi.gc(rwlock, rwlock.free)
+	if not space then
+		ffi.gc(rwlock, rwlock.free)
+	end
+	return rwlock
 end
 
 function rwlock.free(rwlock)

@@ -120,9 +120,9 @@ local H = {}
 H.EBUSY     = 16
 H.ETIMEDOUT = 110
 
-local function zeroinit() return end
-H.PTHREAD_MUTEX_INITIALIZER  = zeroinit
-H.PTHREAD_RWLOCK_INITIALIZER = zeroinit
-H.PTHREAD_COND_INITIALIZER   = zeroinit
+local function nop(t) end
+H.PTHREAD_MUTEX_INITIALIZER  = nop
+H.PTHREAD_RWLOCK_INITIALIZER = nop
+H.PTHREAD_COND_INITIALIZER   = nop
 
 return H
