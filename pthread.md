@@ -34,8 +34,7 @@ pthread.cond() -> cond                          create a condition variable
 cond:free()                                     free the condition variable
 cond:broadcast()                                broadcast
 cond:signal()                                   signal
-cond:wait(mutex)                                wait
-cond:timedwait(mutex, time) -> true | false     wait with os.time() timeout
+cond:wait(mutex[, timeout]) -> true | false     wait with optional timeout (*)
 __read/write locks__
 pthread.rwlock() -> rwlock                      create a r/w lock
 rwlock:free()                                   free a r/w lock
@@ -48,8 +47,11 @@ __scheduler__
 pthread.yield()                                 relinquish control to the scheduler
 ----------------------------------------------- ----------------------------------
 
+> (*) timeout is an os.time() or [time].time() timestamp, not a time period.
+
 __NOTE:__ All functions raise errors but error messages are not included
-and error codes are platform specific (use google).
+and error codes are platform specific. Use `mgit precompile errno.h | grep CODE`
+to search for specific codes.
 
 ## Howto
 
@@ -69,7 +71,7 @@ state:openlibs()
 --create a callback into the Lua state to be called from a different thread
 state:push(function()
 
-	--up-values are not pushed, so we have to require ffi again
+	--up-values are not copied unless we ask, so we have to require ffi again
 	local ffi = require'ffi'
 
 	--this is our worker function that will run in a different thread
@@ -148,7 +150,7 @@ cover different parts of the API.
 The list of currently supported pthreads implementations are:
 
   * winpthreads 0.5.0 from Mingw-w64 4.9.2 (tested on WinXP 32bit and 64bit)
-  * libpthread from gnu libc (tested on Ubuntu 10.04, x86 and x64)
+  * libpthread from GNU libc (tested on Ubuntu 10.04, x86 and x64)
   * libpthread from OSX (tested on OSX 10.9 with 32bit and 64bit binaries)
 
 Only functionality that is common _to all_ of the above is available.

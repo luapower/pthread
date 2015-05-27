@@ -168,7 +168,7 @@ local function test_cond_var(times, timeout)
 				break
 			end
 			while n[0] < 0 do
-				if not cond:timedwait(mutex, os.time() + timeout) then
+				if not cond:wait(mutex, os.time() + timeout) then
 					t = t + 1
 				else
 					--p = p + 1

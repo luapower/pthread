@@ -214,15 +214,16 @@ function cond.signal(cond)
 	checkz(C.pthread_cond_signal(cond))
 end
 
-function cond.wait(cond, mutex)
-	checkz(C.pthread_cond_wait(cond, mutex))
-end
-
---NOTE: `time` is time per os.time(), not a time period.
 local ts
-function cond.timedwait(cond, mutex, time)
- 	ts = ts or ffi.new'timespec'
-	return checktimeout(C.pthread_cond_timedwait(cond, mutex, timespec(time, ts)))
+--NOTE: `time` is time per os.time(), not a time period.
+function cond.wait(cond, mutex, time)
+	if time then
+		ts = ts or ffi.new'timespec'
+		return checktimeout(C.pthread_cond_timedwait(cond, mutex, timespec(time, ts)))
+	else
+		checkz(C.pthread_cond_wait(cond, mutex))
+		return true
+	end
 end
 
 ffi.metatype('pthread_cond_t', {__index = cond})
