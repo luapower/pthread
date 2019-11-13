@@ -314,6 +314,8 @@ typedef struct {
 	long ns;
 } timespec;
 
+typedef int clockid_t;
+int clock_gettime(clockid_t clk_id, timespec *tp);
 int pthread_create(pthread_t *th, const pthread_attr_t *attr, void *(*func)(void *), void *arg);
 real_pthread_t pthread_self(void);
 int pthread_equal(pthread_t th1, pthread_t th2);
@@ -336,6 +338,7 @@ int pthread_mutex_destroy(pthread_mutex_t *m);
 int pthread_mutex_lock(pthread_mutex_t *m);
 int pthread_mutex_unlock(pthread_mutex_t *m);
 int pthread_mutex_trylock(pthread_mutex_t *m);
+int pthread_mutex_timedlock(pthread_mutex_t *m,const timespec *abs_timeout); 
 
 int pthread_mutexattr_init(pthread_mutexattr_t *a);
 int pthread_mutexattr_destroy(pthread_mutexattr_t *a);
@@ -525,6 +528,16 @@ end
 
 function mutex.lock(mutex)
 	checkz(C.pthread_mutex_lock(mutex))
+end
+
+local tsl
+function mutex.timedlock(mutex,timeout)
+	tsl = tsl or ffi.new'timespec'
+	C.clock_gettime(0,tsl) -- CLOCK_REALTIME
+	local int, frac = math.modf(timeout)
+	tsl.s = tsl.s + int
+	tsl.ns = tsl.ns + frac * 1e9
+	return checktimeout(C.pthread_mutex_timedlock(mutex,tsl))
 end
 
 function mutex.unlock(mutex)
