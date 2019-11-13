@@ -537,6 +537,10 @@ function mutex.timedlock(mutex,timeout)
 	local int, frac = math.modf(timeout)
 	tsl.s = tsl.s + int
 	tsl.ns = tsl.ns + frac * 1e9
+	while (tsl.ns >= 1e9) do
+		tsl.ns = tsl.ns - 1e9;
+		tsl.s = tsl.s + 1
+	end
 	return checktimeout(C.pthread_mutex_timedlock(mutex,tsl))
 end
 
