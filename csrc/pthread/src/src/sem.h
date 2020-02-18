@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -20,30 +20,21 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef WIN_PTHREADS_BARRIER_H
-#define WIN_PTHREADS_BARRIER_H
+#ifndef WIN_SEM
+#define WIN_SEM
 
-#define LIFE_BARRIER 0xBAB1FEED
-#define DEAD_BARRIER 0xDEADB00F
+#include <windows.h>
 
-#define _PTHREAD_BARRIER_FLAG (1<<30)
+#define LIFE_SEM 0xBAB1F00D
+#define DEAD_SEM 0xDEADBEEF
 
-#define CHECK_BARRIER(b)  { \
-    if (!(b) || ( ((barrier_t *)(*b))->valid != (unsigned int)LIFE_BARRIER ) ) return EINVAL; }
-
-#include "../include/semaphore.h"
-
-typedef struct barrier_t barrier_t;
-struct barrier_t
+typedef struct _sem_t _sem_t;
+struct _sem_t
 {
-    int valid;
-    int busy;
-    int count;
-    int total;
-    int share;
-    long sel;
-    pthread_mutex_t m;
-    sem_t sems[2];
+    unsigned int valid;
+    HANDLE s;
+    volatile long value;
+    pthread_mutex_t vlock;
 };
 
-#endif
+#endif /* WIN_SEM */

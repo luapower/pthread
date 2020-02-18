@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2013-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -20,8 +20,10 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef WINPTHREAD_INTERNAL_H
-#define WINPTHREAD_INTERNAL_H
-struct _pthread_v * WINPTHREAD_API __pth_gpointer_locked (pthread_t id);
-int pthread_delay_np_ms (DWORD to);
-#endif /*WINPTHREAD_INTERNAL_H*/
+#ifndef WIN_PTHREADS_SIGNAL_H
+#define WIN_PTHREADS_SIGNAL_H
+
+/* Windows has rudimentary signals support.  */
+#define pthread_sigmask(H, S1, S2) 0
+
+#endif /* WIN_PTHREADS_SIGNAL_H */

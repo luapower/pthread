@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -20,22 +20,10 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef WIN_SEM
-#define WIN_SEM
+#ifndef WIN_PTHREADS_REF_H
+#define WIN_PTHREADS_REF_H
+#include "pthread.h"
+#include "semaphore.h"
 
-#include <windows.h>
-#include "mutex.h"
+#endif
 
-#define LIFE_SEM 0xBAB1F00D
-#define DEAD_SEM 0xDEADBEEF
-
-typedef struct _sem_t _sem_t;
-struct _sem_t
-{
-    unsigned int valid;
-    HANDLE s;
-    volatile long value;
-    pthread_mutex_t vlock;
-};
-
-#endif /* WIN_SEM */

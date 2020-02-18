@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -28,7 +28,6 @@
 #include "misc.h"
 #include "semaphore.h"
 #include "sem.h"
-#include "mutex.h"
 #include "ref.h"
 
 int do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout);

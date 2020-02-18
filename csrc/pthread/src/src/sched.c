@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011-2013 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -78,7 +78,7 @@ int pthread_attr_setschedpolicy (pthread_attr_t *attr, int pol)
   return 0;
 }
 
-int pthread_attr_getschedpolicy (pthread_attr_t *attr, int *pol)
+int pthread_attr_getschedpolicy (const pthread_attr_t *attr, int *pol)
 {
   if (!attr || !pol)
     return EINVAL;

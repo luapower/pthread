@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -20,16 +20,8 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#include <windows.h>
-#include <winternl.h>
-#include <stdio.h>
-#include "pthread.h"
-#include "semaphore.h"
-#include "mutex.h"
-#include "rwlock.h"
-#include "cond.h"
-#include "barrier.h"
-#include "sem.h"
-#include "ref.h"
-#include "misc.h"
-
+#ifndef WINPTHREAD_INTERNAL_H
+#define WINPTHREAD_INTERNAL_H
+struct _pthread_v * WINPTHREAD_API __pth_gpointer_locked (pthread_t id);
+int pthread_delay_np_ms (DWORD to);
+#endif /*WINPTHREAD_INTERNAL_H*/

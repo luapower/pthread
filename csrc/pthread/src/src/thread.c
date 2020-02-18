@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -87,12 +87,12 @@ SetThreadName (DWORD dwThreadID, LPCSTR szThreadName)
    info.dwThreadID = dwThreadID;
    info.dwFlags = 0;
 
-   infosize = sizeof (info) / sizeof (DWORD);
+   infosize = sizeof (info) / sizeof (ULONG_PTR);
 
 #if defined(_MSC_VER) && !defined (USE_VEH_FOR_MSC_SETTHREADNAME)
    __try
      {
-       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (ULONG_PTR *)&info);
      }
    __except (EXCEPTION_EXECUTE_HANDLER)
      {
@@ -104,7 +104,7 @@ SetThreadName (DWORD dwThreadID, LPCSTR szThreadName)
    if ((!IsDebuggerPresent ()) && (SetThreadName_VEH_handle == NULL))
      return;
 
-   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (ULONG_PTR *) &info);
 #endif
 }
 
@@ -296,7 +296,10 @@ push_pthread_mem (_pthread_v *sv)
   if (pthr_last == NULL)
     pthr_root = pthr_last = sv;
   else
+  {
     pthr_last->next = sv;
+    pthr_last = sv;
+  }
   pthread_mutex_unlock (&mtx_pthr_locked);
 }
 
@@ -651,7 +654,7 @@ pthread_delay_np (const struct timespec *interval)
     }
   pthread_testcancel ();
   if (s->evStart)
-    WaitForSingleObject (s->evStart, to);
+    _pthread_wait_for_single_object (s->evStart, to);
   else
     Sleep (to);
   pthread_testcancel ();
@@ -674,7 +677,7 @@ pthread_delay_np_ms (DWORD to)
     }
   pthread_testcancel ();
   if (s->evStart)
-    WaitForSingleObject (s->evStart, to);
+    _pthread_wait_for_single_object (s->evStart, to);
   else
     Sleep (to);
   pthread_testcancel ();
@@ -1234,8 +1237,12 @@ pthread_cancel (pthread_t t)
 	  GetThreadContext(tv->h, &ctxt);
 #ifdef _M_X64
 	  ctxt.Rip = (uintptr_t) _pthread_invoke_cancel;
-#else
+#elif defined(_M_IX86)
 	  ctxt.Eip = (uintptr_t) _pthread_invoke_cancel;
+#elif defined(_M_ARM) || defined(_M_ARM64)
+	  ctxt.Pc = (uintptr_t) _pthread_invoke_cancel;
+#else
+#error Unsupported architecture
 #endif
 	  SetThreadContext (tv->h, &ctxt);
 
@@ -1374,7 +1381,7 @@ pthread_attr_getscope (const pthread_attr_t *a, int *flag)
 }
 
 int
-pthread_attr_getstackaddr (pthread_attr_t *attr, void **stack)
+pthread_attr_getstackaddr (const pthread_attr_t *attr, void **stack)
 {
   *stack = attr->stack;
   return 0;
@@ -1454,6 +1461,12 @@ pthread_setcanceltype (int type, int *oldtype)
   return 0;
 }
 
+#if defined(__i386__)
+/* Align ESP on 16-byte boundaries. */
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+__attribute__((force_align_arg_pointer))
+#  endif
+#endif
 int
 pthread_create_wrapper (void *args)
 {
@@ -1514,6 +1527,9 @@ pthread_create_wrapper (void *args)
     {
       pthread_mutex_unlock (&tv->p_clock);
       pthread_mutex_destroy (&tv->p_clock);
+      /* Reinitialise p_clock, since there may be attempts at
+         destroying it again in __dyn_tls_thread later on. */
+      tv->p_clock = PTHREAD_MUTEX_INITIALIZER;
       tv->ended = 1;
     }
   while (pthread_mutex_unlock (&mtx_pthr_locked) == 0)
@@ -1688,12 +1704,12 @@ _pthread_tryjoin (pthread_t t, void **res)
     }
   if(tv->ended == 0 && WaitForSingleObject(tv->h, 0))
     {
-      if (tv->ended == 0);
+      if (tv->ended == 0)
         {
-	  pthread_mutex_unlock (&mtx_pthr_locked);
-	  /* pthread_testcancel (); */
-	  return EBUSY;
-	}
+	      pthread_mutex_unlock (&mtx_pthr_locked);
+	      /* pthread_testcancel (); */
+	      return EBUSY;
+	    }
     }
   CloseHandle (tv->h);
   if (tv->evStart)

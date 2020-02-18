@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2011 mingw-w64 project
+   Copyright (c) 2011-2016  mingw-w64 project
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,6 @@
 #include "pthread_time.h"
 #include "ref.h"
 #include "cond.h"
-#include "mutex.h"
 #include "thread.h"
 #include "misc.h"
 #include "winpthread_internal.h"
@@ -68,10 +67,10 @@ void cond_print(volatile pthread_cond_t *c, char *txt)
     if (!print_state) return;
     cond_t *c_ = (cond_t *)*c;
     if (c_ == NULL) {
-        fprintf(fo,"C%p %d %s\n",*c,(int)GetCurrentThreadId(),txt);
+        fprintf(fo,"C%p %d %s\n",(void *)*c,(int)GetCurrentThreadId(),txt);
     } else {
         fprintf(fo,"C%p %d V=%0X w=%ld %s\n",
-            *c, 
+            (void *)*c,
             (int)GetCurrentThreadId(), 
             (int)c_->valid, 
             c_->waiters_count_,
@@ -203,7 +202,7 @@ pthread_cond_init (pthread_cond_t *c, const pthread_condattr_t *a)
   if (a && *a == PTHREAD_PROCESS_SHARED)
     return ENOSYS;
 
-  if ( !(_c = (pthread_cond_t)calloc(1,sizeof(*_c))) ) {
+  if ( !(_c = calloc(1,sizeof(*_c))) ) {
       return ENOMEM; 
   }
   _c->valid  = DEAD_COND;
@@ -237,10 +236,10 @@ pthread_cond_init (pthread_cond_t *c, const pthread_condattr_t *a)
   if (!r)
     {
       _c->valid = LIFE_COND;
-      *c = _c;
+      *c = (pthread_cond_t)_c;
     }
   else
-    *c = NULL;
+    *c = (pthread_cond_t)NULL;
   return r;
 }
 
@@ -256,7 +255,7 @@ pthread_cond_destroy (pthread_cond_t *c)
       pthread_spin_lock (&cond_locked);
       if (*c == PTHREAD_COND_INITIALIZER)
       {
-	*c = NULL;
+	*c = (pthread_cond_t)NULL;
 	r = 0;
       }
       else
@@ -280,7 +279,7 @@ pthread_cond_destroy (pthread_cond_t *c)
       LeaveCriticalSection(&_c->waiters_count_lock_);
       return r;
     }
-  *c = NULL;
+  *c = (pthread_cond_t)NULL;
   do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
 
   if (!CloseHandle (_c->sema_q) && !r)
@@ -420,7 +419,7 @@ pthread_cond_wait (pthread_cond_t *c, pthread_mutex_t *external_mutex)
 
   /* pthread_testcancel(); */
 
-  if (!c || *c == NULL)
+  if (!c || *c == (pthread_cond_t)NULL)
     return EINVAL;
   _c = (cond_t *)*c;
   if (*c == PTHREAD_COND_INITIALIZER)
@@ -432,10 +431,20 @@ pthread_cond_wait (pthread_cond_t *c, pthread_mutex_t *external_mutex)
   } else if (_c->valid != (unsigned int)LIFE_COND)
     return EINVAL;
 
+tryagain:
   r = do_sema_b_wait (_c->sema_b, 0, INFINITE,&_c->waiters_b_lock_,&_c->value_b);
   if (r != 0)
     return r;
-  EnterCriticalSection (&_c->waiters_count_lock_);
+
+  if (!TryEnterCriticalSection (&_c->waiters_count_lock_))
+  {
+    r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+    if (r != 0)
+      return r;
+    sched_yield();
+    goto tryagain;
+  }
+
   _c->waiters_count_++;
   LeaveCriticalSection(&_c->waiters_count_lock_);
   r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
@@ -486,10 +495,22 @@ pthread_cond_timedwait_impl (pthread_cond_t *c, pthread_mutex_t *external_mutex,
     dwr = dwMilliSecs(_pthread_time_in_ms_from_timespec(t));
   }
 
+tryagain:
   r = do_sema_b_wait (_c->sema_b, 0, INFINITE,&_c->waiters_b_lock_,&_c->value_b);
   if (r != 0)
     return r;
+
+  if (!TryEnterCriticalSection (&_c->waiters_count_lock_))
+  {
+    r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+    if (r != 0)
+      return r;
+    sched_yield();
+    goto tryagain;
+  }
+
   _c->waiters_count_++;
+  LeaveCriticalSection(&_c->waiters_count_lock_);
   r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
   if (r != 0)
     return r;
@@ -599,7 +620,7 @@ do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout)
   DWORD res, dt;
   if (nointerrupt == 1)
   {
-    res = WaitForSingleObject(sema, timeout);
+    res = _pthread_wait_for_single_object(sema, timeout);
     switch (res) {
     case WAIT_TIMEOUT:
 	r = ETIMEDOUT;
@@ -623,7 +644,7 @@ do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout)
   if (maxH == 2)
   {
 redo:
-      res = WaitForMultipleObjects(maxH, arr, 0, timeout);
+      res = _pthread_wait_for_multiple_objects(maxH, arr, 0, timeout);
       switch (res) {
       case WAIT_TIMEOUT:
 	  r = ETIMEDOUT;
@@ -656,7 +677,7 @@ redo:
   if (timeout == INFINITE)
   {
     do {
-      res = WaitForSingleObject(sema, 40);
+      res = _pthread_wait_for_single_object(sema, 40);
       switch (res) {
       case WAIT_TIMEOUT:
 	  r = ETIMEDOUT;
@@ -685,7 +706,7 @@ redo:
   dt = 20;
   do {
     if (dt > timeout) dt = timeout;
-    res = WaitForSingleObject(sema, dt);
+    res = _pthread_wait_for_single_object(sema, dt);
     switch (res) {
     case WAIT_TIMEOUT:
 	r = ETIMEDOUT;
